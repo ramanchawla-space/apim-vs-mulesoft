@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure APIM vs MuleSoft — Enterprise API Gateway</title>
+<meta name="description" content="Enterprise API gateway comparison: Azure API Management vs MuleSoft Omni Gateway and ecosystem.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14212F; --muted:#5A6878; --line:#D8DEE6; --paper:#FFFFFF; --bg:#E9EDF2;
+    --navy:#1F3A5F; --apim:#2563A8; --apim-soft:#E6EEF8; --apim-line:#B9CEE7;
+    --mule:#0E7C6B; --mule-soft:#E2F2EF; --mule-line:#AEDBD1;
+    --warn:#9A5B00; --warn-soft:#FBF1E0; --warn-line:#EDD2A0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:hidden}
+  .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  .deck{position:relative;width:1280px;height:720px;transform-origin:center center}
+  .slide{position:absolute;inset:0;background:var(--paper);padding:60px 80px 68px;display:none;flex-direction:column;
+    box-shadow:0 10px 40px rgba(20,33,47,.12);border-radius:6px;overflow:hidden}
+  .slide.active{display:flex}
+  .slide::after{content:attr(data-n);position:absolute;right:40px;bottom:26px;font-size:13px;color:var(--muted);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+  .slide::before{content:"Azure APIM vs MuleSoft · Enterprise API gateway";position:absolute;left:80px;bottom:26px;font-size:13px;color:var(--muted)}
+  .slide.title-slide::before,.slide.title-slide::after{display:none}
+
+  .kicker{font-size:13.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  h1{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:56px;line-height:1.08;color:var(--navy)}
+  h2{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:34px;line-height:1.16;color:var(--navy);margin-bottom:22px;max-width:1060px;text-wrap:balance}
+  p{font-size:19px;line-height:1.5}
+  .lead{font-size:23px;line-height:1.45;max-width:1000px;color:var(--ink)}
+  .muted{color:var(--muted)}
+  b,strong{font-weight:600}
+
+  /* Title */
+  .title-slide{background:var(--navy);color:#fff;justify-content:flex-end;padding:80px}
+  .title-slide h1{color:#fff;font-size:62px;max-width:980px}
+  .title-slide .kicker{color:#AFC3DA}
+  .title-slide .sub{font-size:23px;color:#D5E0EC;margin-top:22px;max-width:900px;line-height:1.4}
+  .title-slide .date{margin-top:44px;font-size:16px;color:#AFC3DA;letter-spacing:.04em}
+  .bars{position:absolute;top:80px;right:80px;display:flex;gap:10px}
+  .bars span{width:14px;height:120px;border-radius:2px}
+
+  /* Tags / pills */
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;padding:4px 11px;border-radius:20px;white-space:nowrap}
+  .tag.apim{background:var(--apim-soft);color:var(--apim)}
+  .tag.mule{background:var(--mule-soft);color:var(--mule)}
+  .tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+
+  /* Two-column cards */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1}
+  .card{border:1px solid var(--line);border-radius:10px;padding:26px 28px;display:flex;flex-direction:column}
+  .card.apim{border-top:6px solid var(--apim)}
+  .card.mule{border-top:6px solid var(--mule)}
+  .card h3{font-size:23px;font-weight:600;margin-bottom:10px}
+  .card.apim h3{color:var(--apim)} .card.mule h3{color:var(--mule)}
+  .card p{font-size:20px}
+
+  /* ===== Decision framework (redesigned) ===== */
+  .df-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1;min-height:0}
+  .df-col{border-radius:10px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;min-height:0}
+  .df-col.apim{background:var(--apim-soft);border:1px solid var(--apim-line)}
+  .df-col.mule{background:var(--mule-soft);border:1px solid var(--mule-line)}
+  .df-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .df-head .dot{width:12px;height:12px;border-radius:50%}
+  .df-col.apim .dot{background:var(--apim)} .df-col.mule .dot{background:var(--mule)}
+  .df-head h3{font-size:19px;font-weight:600}
+  .df-col.apim h3{color:var(--apim)} .df-col.mule h3{color:var(--mule)}
+  .df-items{list-style:none;display:flex;flex-direction:column;gap:7px;overflow:auto}
+  .df-items li{display:flex;align-items:flex-start;gap:10px;font-size:16px;line-height:1.35;background:rgba(255,255,255,.65);
+    border-radius:7px;padding:9px 12px}
+  .df-items .chk{flex:0 0 auto;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .df-col.apim .chk{background:var(--apim);color:#fff} .df-col.mule .chk{background:var(--mule);color:#fff}
+  .df-items .chk svg{width:11px;height:11px}
+
+  /* Big question */
+  .bigq{font-family:"IBM Plex Serif",Georgia,serif;font-size:34px;line-height:1.3;color:var(--navy);
+    border-left:6px solid var(--navy);padding:6px 0 6px 30px;margin:4px 0 36px;max-width:1060px;text-wrap:balance}
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  .answer{border-radius:10px;padding:22px 26px}
+  .answer.apim{background:var(--apim-soft)} .answer.mule{background:var(--mule-soft)}
+  .answer .if{font-size:14.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .answer p{font-size:21px}
+  .answer.apim strong{color:var(--apim)} .answer.mule strong{color:var(--mule)}
+
+  /* Advantage overview */
+  .adv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;flex:1}
+  .adv{border:1px solid var(--line);border-radius:10px;padding:22px 20px;display:flex;flex-direction:column;gap:12px}
+  .adv .n{font-family:"IBM Plex Serif",serif;font-size:40px;color:var(--mule);line-height:1;font-variant-numeric:tabular-nums}
+  .adv h3{font-size:19.5px;font-weight:600;line-height:1.3}
+  .adv p{font-size:16px;color:var(--muted);line-height:1.45}
+  .meter{margin-top:auto;display:flex;flex-direction:column;gap:6px}
+  .meter .lbl{font-size:13.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .meter .track{display:flex;gap:4px}
+  .meter .track i{flex:1;height:8px;border-radius:2px;background:var(--line)}
+  .meter .track i.on{background:var(--mule)}
+  .meter.q .track i.on{background:var(--warn)}
+  .meter.q .lbl{color:var(--warn)} .meter .lbl{color:var(--mule)}
+
+  /* Advantage detail */
+  .detail-head{display:flex;align-items:baseline;gap:18px;margin-bottom:6px}
+  .detail-head .n{font-family:"IBM Plex Serif",serif;font-size:50px;color:var(--mule);line-height:1;font-variant-numeric:tabular-nums}
+  .detail-head h2{margin:0}
+  .claim{font-size:21px;line-height:1.4;color:var(--ink);margin:4px 0 22px;max-width:1080px;font-weight:500}
+  .quad{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:14px 22px;flex:1;min-height:0}
+  .cell{padding:15px 20px;border-radius:9px;border:1px solid var(--line)}
+  .cell h4{font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;margin-bottom:6px}
+  .cell p{font-size:15.5px;line-height:1.44}
+  .cell.m{background:var(--mule-soft);border-color:transparent} .cell.m h4{color:var(--mule)}
+  .cell.a{background:var(--apim-soft);border-color:transparent} .cell.a h4{color:var(--apim)}
+  .cell.w h4{color:var(--navy)}
+  .cell.c{background:var(--warn-soft);border-color:transparent} .cell.c h4{color:var(--warn)}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;font-size:18px}
+  th{text-align:left;font-size:13.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    padding:11px 16px;border-bottom:2px solid var(--navy)}
+  td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.4}
+  .strength{font-weight:600}
+  .s-strong{color:var(--mule)} .s-mod{color:#3D7A6F} .s-q{color:var(--warn)}
+
+  .closing{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:6px}
+  .closing .card p{font-size:21px}
+  .foot{margin-top:26px;font-size:19px;color:var(--muted);max-width:1060px}
+
+  /* Figures / diagrams */
+  figure{margin:0;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
+  figure svg{width:100%;height:100%;display:block}
+  figcaption{font-size:14.5px;color:var(--muted);text-align:center;max-width:980px;align-self:center;line-height:1.4}
+  .dia-wrap{flex:1;min-height:0;border-radius:10px;background:#FAFBFC;border:1px solid var(--line);padding:18px 24px;display:flex}
+
+  /* Strength bar chart slide */
+  .chart{display:flex;flex-direction:column;gap:22px;flex:1;justify-content:center}
+  .bar-row{display:grid;grid-template-columns:300px 1fr 110px;align-items:center;gap:18px}
+  .bar-row .name{font-size:17.5px;font-weight:600;color:var(--ink)}
+  .bar-row .name .sub{display:block;font-size:13.5px;font-weight:400;color:var(--muted);margin-top:2px}
+  .bar-track{height:22px;background:var(--bg);border-radius:5px;overflow:hidden;position:relative}
+  .bar-fill{height:100%;border-radius:5px 0 0 5px;display:flex}
+  .bar-row .pct{font-size:15px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+  .bar-strong .bar-fill{background:var(--mule)} .bar-strong .pct{color:var(--mule)}
+  .bar-mod .bar-fill{background:#3D7A6F} .bar-mod .pct{color:#3D7A6F}
+  .bar-q .bar-fill{background:var(--warn)} .bar-q .pct{color:var(--warn)}
+
+  /* Controls */
+  .progress{position:fixed;left:0;top:0;height:4px;background:var(--navy);transition:width .25s ease;z-index:5}
+  .nav{position:fixed;right:20px;bottom:16px;display:flex;gap:8px;z-index:5}
+  .nav button{font:inherit;font-size:14px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer}
+  .nav button:hover{border-color:var(--navy)}
+  .hint{position:fixed;left:20px;bottom:20px;font-size:13px;color:var(--muted);z-index:5}
+
+  @media print{
+    @page{size:1280px 720px;margin:0}
+    html,body{overflow:visible;background:#fff;height:auto}
+    .stage{position:static;display:block}
+    .deck{transform:none!important;width:1280px;height:auto}
+    .slide{position:relative;display:flex!important;width:1280px;height:720px;box-shadow:none;border-radius:0;page-break-after:always;break-after:page}
+    .progress,.nav,.hint{display:none}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="stage"><div class="deck" id="deck">
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <div class="bars"><span style="background:#2563A8"></span><span style="background:#0E7C6B"></span><span style="background:#AFC3DA"></span></div>
+  <div class="kicker">Architecture board · Enterprise API gateway</div>
+  <h1>Azure APIM vs MuleSoft</h1>
+  <p class="sub">Where each platform has a genuine advantage, and the one question that decides between them.</p>
+  <p class="date">October 2026</p>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="kicker">Bottom line</div>
+  <h2>Neither platform is universally superior</h2>
+  <div class="cols">
+    <div class="card apim">
+      <h3>Azure APIM wins…</h3>
+      <p>where the API gateway should be an <b>independent, DevOps-managed enterprise control point</b>, neutral to whatever technology sits behind it.</p>
+    </div>
+    <div class="card mule">
+      <h3>MuleSoft wins…</h3>
+      <p>where API management should be <b>part of one strategic integration platform</b>, from design and reuse through to governance and runtime.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3: core distinction, now as a topology diagram -->
+<section class="slide">
+  <div class="kicker">The core distinction</div>
+  <h2>A neutral control point, or one connected platform</h2>
+  <div class="dia-wrap">
+    <figure>
+      <svg viewBox="0 0 1120 420" role="img" aria-label="Azure APIM sits as one neutral gateway in front of five unrelated backend technologies with no connection between them. MuleSoft's Anypoint Platform connects design, catalogue, governance, gateway and Mule runtime as one continuous flow, with the gateway as just one stage.">
+        <!-- APIM side -->
+        <text x="270" y="30" text-anchor="middle" font-family="IBM Plex Serif, serif" font-weight="600" font-size="19" fill="#2563A8">Azure APIM</text>
+        <text x="270" y="52" text-anchor="middle" font-size="13" fill="#5A6878">independent gateway, backend-agnostic</text>
+
+        <rect x="170" y="70" width="200" height="54" rx="8" fill="#E6EEF8" stroke="#2563A8" stroke-width="1.5"/>
+        <text x="270" y="102" text-anchor="middle" font-size="15" font-weight="600" fill="#2563A8">API Gateway</text>
+
+        <!-- consumer -->
+        <line x1="270" y1="124" x2="270" y2="155" stroke="#2563A8" stroke-width="1.5" marker-end="url(#a1)"/>
+        <g transform="translate(270,70)"></g>
+
+        <!-- five backend boxes fanning out below, unconnected to each other -->
+        <g font-size="12.5" fill="#14212F">
+          <rect x="40" y="200" width="118" height="46" rx="6" fill="#fff" stroke="#D8DEE6"/>
+          <text x="99" y="227" text-anchor="middle">.NET services</text>
+
+          <rect x="172" y="200" width="118" height="46" rx="6" fill="#fff" stroke="#D8DEE6"/>
+          <text x="231" y="227" text-anchor="middle">Mule runtime</text>
+
+          <rect x="304" y="200" width="118" height="46" rx="6" fill="#fff" stroke="#D8DEE6"/>
+          <text x="363" y="227" text-anchor="middle">AWS Lambda</text>
+
+          <rect x="436" y="200" width="118" height="46" rx="6" fill="#fff" stroke="#D8DEE6"/>
+          <text x="495" y="220" text-anchor="middle">SaaS /</text>
+          <text x="495" y="235" text-anchor="middle">3rd-party API</text>
+        </g>
+
+        <!-- connectors from gateway fanning to each backend -->
+        <path d="M270 124 C270 160, 99 160, 99 200" fill="none" stroke="#2563A8" stroke-width="1.3" marker-end="url(#a1)"/>
+        <path d="M270 124 C270 160, 231 160, 231 200" fill="none" stroke="#2563A8" stroke-width="1.3" marker-end="url(#a1)"/>
+        <path d="M270 124 C270 160, 363 160, 363 200" fill="none" stroke="#2563A8" stroke-width="1.3" marker-end="url(#a1)"/>
+        <path d="M270 124 C270 160, 495 160, 495 200" fill="none" stroke="#2563A8" stroke-width="1.3" marker-end="url(#a1)"/>
+        <text x="270" y="170" text-anchor="middle" font-size="11.5" fill="#5A6878" font-style="italic">routes to, with no platform tie</text>
+
+        <!-- git/iac note -->
+        <rect x="140" y="270" width="260" height="40" rx="7" fill="#fff" stroke="#AFC3DA" stroke-dasharray="4 3"/>
+        <text x="270" y="294" text-anchor="middle" font-size="12.5" fill="#2563A8">managed as code — Git, PRs, IaC</text>
+        <line x1="270" y1="246" x2="270" y2="270" stroke="#2563A8" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+        <!-- divider -->
+        <line x1="565" y1="20" x2="565" y2="400" stroke="#D8DEE6" stroke-width="1.5"/>
+
+        <!-- MuleSoft side: a connected chain -->
+        <text x="840" y="30" text-anchor="middle" font-family="IBM Plex Serif, serif" font-weight="600" font-size="19" fill="#0E7C6B">MuleSoft Anypoint Platform</text>
+        <text x="840" y="52" text-anchor="middle" font-size="13" fill="#5A6878">one connected lifecycle; the gateway is one stage</text>
+
+        <g font-size="13.5" font-weight="600" fill="#0E7C6B">
+          <rect x="610" y="90" width="150" height="50" rx="7" fill="#E2F2EF" stroke="#0E7C6B" stroke-width="1.5"/>
+          <text x="685" y="120" text-anchor="middle">Design Center</text>
+
+          <rect x="780" y="90" width="150" height="50" rx="7" fill="#E2F2EF" stroke="#0E7C6B" stroke-width="1.5"/>
+          <text x="855" y="120" text-anchor="middle">Exchange</text>
+
+          <rect x="950" y="90" width="140" height="50" rx="7" fill="#E2F2EF" stroke="#0E7C6B" stroke-width="1.5"/>
+          <text x="1020" y="120" text-anchor="middle">API Manager</text>
+        </g>
+
+        <line x1="760" y1="115" x2="780" y2="115" stroke="#0E7C6B" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="930" y1="115" x2="950" y2="115" stroke="#0E7C6B" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <line x1="855" y1="140" x2="855" y2="170" stroke="#0E7C6B" stroke-width="1.5" marker-end="url(#a2)"/>
+        <rect x="755" y="170" width="200" height="50" rx="7" fill="#E2F2EF" stroke="#0E7C6B" stroke-width="1.5"/>
+        <text x="855" y="192" text-anchor="middle" font-size="13.5" font-weight="600" fill="#0E7C6B">Omni Gateway</text>
+        <text x="855" y="208" text-anchor="middle" font-size="11" fill="#3D7A6F">equivalent stage to APIM</text>
+
+        <line x1="855" y1="220" x2="855" y2="250" stroke="#0E7C6B" stroke-width="1.5" marker-end="url(#a2)"/>
+        <rect x="780" y="250" width="150" height="46" rx="7" fill="#fff" stroke="#0E7C6B" stroke-width="1.5"/>
+        <text x="855" y="278" text-anchor="middle" font-size="13.5" font-weight="600" fill="#0E7C6B">Mule runtime</text>
+
+        <!-- governance wraps the whole chain -->
+        <rect x="598" y="78" width="504" height="230" rx="12" fill="none" stroke="#9A5B00" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text x="850" y="330" text-anchor="middle" font-size="12.5" fill="#9A5B00">API Governance applies across every stage, design through runtime</text>
+      </svg>
+      <figcaption>Azure APIM is one neutral gateway in front of unrelated backends, managed as code. MuleSoft connects design, catalogue, gateway and runtime as a single governed chain — the gateway is only one link in it.</figcaption>
+    </figure>
+  </div>
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#2563A8"/></marker>
+      <marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#0E7C6B"/></marker>
+    </defs>
+  </svg>
+</section>
+
+<!-- 4: decision framework, redesigned as two scannable panels -->
+<section class="slide">
+  <div class="kicker">Decision framework</div>
+  <h2>What you want decides which platform fits</h2>
+  <div class="df-wrap">
+    <div class="df-col apim">
+      <div class="df-head"><span class="dot"></span><h3>Lean Azure APIM if you want…</h3></div>
+      <ul class="df-items">
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>One gateway, independent of backend technology</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Git, PRs and IaC at the centre of API management</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Deep investment in Azure / Microsoft security &amp; DevOps</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>API policies managed as code / configuration</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>A mix of Mule, .NET, AWS and SaaS APIs behind one gateway</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>The gateway kept fully separate from integration technology</li>
+      </ul>
+    </div>
+    <div class="df-col mule">
+      <div class="df-head"><span class="dot"></span><h3>Lean MuleSoft if you want…</h3></div>
+      <ul class="df-items">
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>RAML + OAS visual design built into the platform</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>A dedicated enterprise API asset catalogue</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Reusable API fragments and policies, centrally discoverable</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Design-time and deployment-time governance, integrated</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MuleSoft already the strategic integration platform</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Design → Exchange → API Manager → runtime, tightly connected</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Consumers discovering and reusing a broad set of integration assets</li>
+        <li><span class="chk"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>One platform spanning API + integration + runtime</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="kicker">The core distinction, stated plainly</div>
+  <h2>Each platform's fundamental advantage</h2>
+  <div class="cols">
+    <div class="card apim">
+      <h3>Azure APIM</h3>
+      <p>An enterprise API gateway as an <b>independent, DevOps / IaC-managed control point</b>.</p>
+    </div>
+    <div class="card mule">
+      <h3>MuleSoft</h3>
+      <p>An enterprise API platform where <b>design, reusable assets, governance, gateway and integration runtime</b> are deeply connected.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="kicker">The question for the board</div>
+  <p class="bigq">Do we want our API gateway to be a standalone enterprise capability, or do we want API management to be part of our strategic integration platform?</p>
+  <div class="answers">
+    <div class="answer apim">
+      <div class="if">If the answer is</div>
+      <p>A standalone enterprise capability → the <strong>Azure APIM</strong> architecture becomes compelling.</p>
+    </div>
+    <div class="answer mule">
+      <div class="if">If the answer is</div>
+      <p>API management + integration as one strategic platform → <strong>MuleSoft's</strong> integrated model becomes compelling.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="kicker">Where MuleSoft has a genuine advantage</div>
+  <h2>MuleSoft's lead is in the design-time and lifecycle side of API management</h2>
+  <div class="adv-grid">
+    <div class="adv"><div class="n">1</div><h3>Enterprise asset catalogue and reuse</h3><p>Exchange manages the building blocks behind APIs, not just the APIs.</p>
+      <div class="meter"><span class="lbl">Strong</span><div class="track"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div></div>
+    <div class="adv"><div class="n">2</div><h3>Integrated API design tooling</h3><p>Design, mock and publish on the platform rather than import from elsewhere.</p>
+      <div class="meter"><span class="lbl">Strong</span><div class="track"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div></div>
+    <div class="adv"><div class="n">3</div><h3>Integrated design and runtime governance</h3><p>One ruleset from first draft to the deployed API.</p>
+      <div class="meter"><span class="lbl">Moderate</span><div class="track"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div></div>
+    <div class="adv"><div class="n">4</div><h3>Spec-first delivery for Mule APIs</h3><p>Implementation generated from the design, with validation built in.</p>
+      <div class="meter q"><span class="lbl">Qualified</span><div class="track"><i class="on"></i><i class="on"></i><i></i><i></i></div></div></div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="detail-head"><span class="n">1</span><h2>Enterprise asset catalogue and reuse</h2></div>
+  <p class="claim">MuleSoft treats APIs as reusable enterprise assets, not just endpoints to publish.</p>
+  <div class="quad">
+    <div class="cell m"><h4>What MuleSoft provides</h4><p>Anypoint Exchange is one versioned catalogue for specs, RAML/OAS fragments (data types, traits, security schemes), custom policies, connectors, templates and examples, each with docs, ownership and dependency links.</p></div>
+    <div class="cell a"><h4>Azure APIM equivalent</h4><p>The developer portal serves API consumers: discover, read docs, subscribe. Azure API Center adds an organisation-wide inventory. Neither manages the reusable building blocks behind APIs.</p></div>
+    <div class="cell w"><h4>Why it matters</h4><p>A shared regulated-entity schema, error model or security scheme defined once keeps APIs consistent across teams and cuts design and build effort. The benefit compounds over time.</p></div>
+    <div class="cell c"><h4>Caveat</h4><p>It depends on discipline. Exchange only pays off if teams actually publish, curate and reuse assets, rather than treating it as a dumping ground.</p></div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="detail-head"><span class="n">2</span><h2>Integrated API design tooling</h2></div>
+  <p class="claim">API design is a first-class activity on the platform, not something done elsewhere and imported.</p>
+  <div class="quad">
+    <div class="cell m"><h4>What MuleSoft provides</h4><p>Design Center and Anypoint Code Builder offer RAML and OAS authoring with guided and visual editing, instant mocking, and one-step publishing to Exchange. Exchange fragments drop straight into new designs.</p></div>
+    <div class="cell a"><h4>Azure APIM equivalent</h4><p>No native design tool. Teams write OpenAPI in VS Code, Stoplight or SwaggerHub and import it. It works, but the design lives outside the platform.</p></div>
+    <div class="cell w"><h4>Why it matters</h4><p>Design-first catches contract issues when they are cheapest to fix, and lets consumers and providers agree the interface while the build runs in parallel.</p></div>
+    <div class="cell c"><h4>Caveat</h4><p>Third-party design tools close much of the gap on the Azure side, at the cost of another product to license, integrate and govern.</p></div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="detail-head"><span class="n">3</span><h2>Integrated design and runtime governance</h2></div>
+  <p class="claim">Standards are enforced on one platform, from the first design draft through to the running API.</p>
+  <div class="quad">
+    <div class="cell m"><h4>What MuleSoft provides</h4><p>Anypoint API Governance applies rulesets (naming, security schemes, error models, versioning, documentation) to designs as they are written and to deployed instances, with conformance visible in one place.</p></div>
+    <div class="cell a"><h4>Azure APIM equivalent</h4><p>Azure API Center lints specifications against customisable rulesets, so Azure does offer design governance. It is separate from the gateway and less tied to the runtime view.</p></div>
+    <div class="cell w"><h4>Why it matters</h4><p>Governance built into the lifecycle makes conformance the default path rather than an extra review step, and gives the board clear evidence of compliance.</p></div>
+    <div class="cell c"><h4>Caveat</h4><p>The gap has narrowed. Azure now covers core linting; MuleSoft's edge is tighter integration across design, catalogue and runtime.</p></div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="detail-head"><span class="n">4</span><h2>Spec-first delivery for Mule APIs</h2></div>
+  <p class="claim">For Mule-implemented APIs, the design generates the implementation, with contract validation built in.</p>
+  <div class="quad">
+    <div class="cell m"><h4>What MuleSoft provides</h4><p>APIkit scaffolds a Mule app from the RAML or OAS design. Its router validates parameters, headers and body schema, and returns 400 for non-conforming requests with no extra configuration.</p></div>
+    <div class="cell a"><h4>Azure APIM equivalent</h4><p>Validation policies check requests against the imported OpenAPI definition. Added once at API, product or global scope, they follow the spec and can be templated through APIOps.</p></div>
+    <div class="cell w"><h4>Why it matters</h4><p>Generating code from the design keeps contract and implementation aligned and removes hand-written validation logic from development teams.</p></div>
+    <div class="cell c"><h4>Caveat</h4><p>This sits in the Mule runtime, not the gateway. .NET, AWS or SaaS APIs get no automatic validation from Omni Gateway; at the gateway, APIM offers broadly equivalent spec-driven validation.</p></div>
+  </div>
+</section>
+
+<!-- 12: summary as bar chart instead of table -->
+<section class="slide">
+  <div class="kicker">Summary</div>
+  <h2>How strong is each MuleSoft advantage?</h2>
+  <div class="chart">
+    <div class="bar-row bar-strong">
+      <div class="name">1 · Asset catalogue &amp; reuse<span class="sub">No Azure equivalent for reusable integration assets</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:90%"></div></div>
+      <div class="pct">Strong</div>
+    </div>
+    <div class="bar-row bar-strong">
+      <div class="name">2 · Integrated design tooling<span class="sub">No native design tool; third-party tools needed on Azure</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:85%"></div></div>
+      <div class="pct">Strong</div>
+    </div>
+    <div class="bar-row bar-mod">
+      <div class="name">3 · Design &amp; runtime governance<span class="sub">API Center linting exists but is less integrated</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:60%"></div></div>
+      <div class="pct">Moderate</div>
+    </div>
+    <div class="bar-row bar-q">
+      <div class="name">4 · Spec-first delivery for Mule APIs<span class="sub">APIM validation policies match it at the gateway</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:35%"></div></div>
+      <div class="pct">Qualified</div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <div class="kicker">In closing</div>
+  <h2>Two different strengths: the lifecycle or the control point</h2>
+  <div class="closing">
+    <div class="card mule"><h3>MuleSoft's case</h3><p>The <b>API lifecycle</b>: designing, governing and reusing APIs as enterprise assets.</p></div>
+    <div class="card apim"><h3>Azure APIM's case</h3><p>The <b>gateway as an operational control point</b>: backend-neutral, code-managed, Azure-native.</p></div>
+  </div>
+  <p class="foot">The weight the board gives to each should follow from how APRA expects to build and manage APIs over the next several years.</p>
+</section>
+
+</div></div>
+
+<div class="hint">← → to navigate · F full screen</div>
+<div class="nav"><button id="prev" aria-label="Previous slide">← Prev</button><button id="next" aria-label="Next slide">Next →</button></div>
+
+<script>
+(function(){
+  const deck=document.getElementById('deck');
+  const slides=[...deck.querySelectorAll('.slide')];
+  const bar=document.getElementById('progress');
+  slides.forEach((s,i)=>s.dataset.n=(i+1)+' / '+slides.length);
+  let i=0;
+  const fromHash=parseInt(location.hash.slice(1),10);
+  if(fromHash>=1&&fromHash<=slides.length) i=fromHash-1;
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    bar.style.width=((i+1)/slides.length*100)+'%';
+    history.replaceState(null,'','#'+(i+1));
+  }
+  function fit(){
+    const s=Math.min(window.innerWidth/1320,window.innerHeight/760);
+    deck.style.transform='scale('+s+')';
+  }
+  document.addEventListener('keydown',e=>{
+    if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();show(i+1)}
+    else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();show(i-1)}
+    else if(e.key==='Home')show(0);
+    else if(e.key==='End')show(slides.length-1);
+    else if(e.key==='f'||e.key==='F'){
+      if(!document.fullscreenElement)document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.getElementById('next').onclick=()=>show(i+1);
+  let x0=null;
+  document.addEventListener('touchstart',e=>{x0=e.touches[0].clientX},{passive:true});
+  document.addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)show(i+(dx<0?1:-1));x0=null});
+  window.addEventListener('resize',fit);
+  fit();show(i);
+})();
+</script>
+</body>
+</html>
